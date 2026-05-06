@@ -1,0 +1,261 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+h1, h2 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    margin: 0;
+    text-align: center;
+}
+
+.chat-section, .preview-section, .saved-data-section {
+    padding: 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.chat-section:last-child {
+    border-bottom: none;
+}
+
+/* Chat styles */
+.chat-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #f8f9ff;
+    border-radius: 20px;
+    height: 400px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    min-height: 200px;
+}
+
+.chat-message {
+    background: white;
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 18px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    max-width: 80%;
+}
+
+.chat-input-area {
+    padding: 20px;
+    border-top: 1px solid #e1e5ff;
+    background: white;
+    border-radius: 0 0 20px 20px;
+}
+
+#chatInput {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+#chatInput:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.chat-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: flex-end;
+}
+
+.clear-btn {
+    display: block;
+    margin: 20px auto 0;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+}
+
+.preview-container {
+    background: #f8f9ff;
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.preview-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+label {
+    font-weight: 500;
+    min-width: 120px;
+}
+
+#dataTableContainer {
+    background: #f8f9ff;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+.export-section {
+    padding: 30px;
+    text-align: center;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin: 5px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#clearAll {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 500;
+    gap: 5px;
+}
+
+input[type="range"] {
+    width: 120px;
+}
+
+#dataTableContainer, #previewTableContainer {
+    overflow-x: auto;
+    max-height: 400px;
+    border: 2px solid #e1e5ff;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    min-width: 800px;
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    width: var(--col1-width, 33%);
+}
+
+th:nth-child(2) {
+    width: var(--col2-width, 33%);
+}
+
+th:nth-child(3) {
+    width: var(--col3-width, 34%);
+}
+
+tr:nth-child(even) {
+    background: #f8f9ff;
+}
+
+tr:hover {
+    background: #e3f2fd;
+}
+
+.export-btn {
+    background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+    font-size: 18px;
+    padding: 15px 40px;
+    display: block;
+    margin: 0 auto;
+}
+
+#default3Col {
+    font-size: 18px;
+    padding: 15px 30px;
+}
+
+#customAlign {
+    background: linear-gradient(135deg, #ffd23f 0%, #ff9800 100%);
+}
+
+@media (max-width: 768px) {
+    .input-row {
+        flex-direction: column;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    input[type="range"] {
+        width: 100%;
+    }
+}

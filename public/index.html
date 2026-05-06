@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micromize Studio</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="page-hero">
+           
+            <h1>Micromize</h1>
+           
+        </header>
+
+        <section class="chat-section">
+            <div class="section-header">
+                <div>
+          
+<h2> </h2>                </div>
+               <p class="section-description"></p>
+            </div>
+
+            <div id="chatContainer" class="chat-container">
+                <div class="chat-input-area">
+                    <textarea id="chatInput" placeholder="Paste student notes here...&#10;Use blank lines to separate paragraphs&#10;Number-only lines stay with the next point" rows="6"></textarea>
+                    <div class="chat-buttons">
+                        <button id="parsePreview" class="insert-btn" type="button">Insert</button>
+                         <button id="clearAll" class="clear-btn" type="button">Clear  Data</button>
+                    </div>
+                </div>
+            </div>
+           
+        </section>
+
+        <section class="preview-section">
+            <div class="section-header">
+                <div>
+                   
+                   
+                </div>
+                <p class="section-description"></p>
+            </div>
+
+            <div id="previewContainer" class="preview-container">
+                <div class="preview-controls">
+                    <div class="preview-controls-head">
+                        <div class="controls-copy">
+                            <p class="section-kicker">Page Controls</p>
+                           
+                           
+                        </div>
+                    </div>
+
+                    <div class="control-grid control-grid--pages">
+                        <div class="control-card control-card--scope">
+                            <span class="control-card-top">
+                                <span class="control-label">Apply Settings To</span>
+                                <span id="pageScopeValue" class="control-value">Page 1</span>
+                            </span>
+
+                            <div class="scope-controls">
+                                <button id="applyAllPages" type="button" class="scope-button secondary-btn">ALL</button>
+                                <label class="page-number-field" for="pageNumberInput">
+                                    <span>Page</span>
+                                    <input type="number" id="pageNumberInput" min="1" value="1" inputmode="numeric">
+                                </label>
+                                </div>
+
+                            <p id="pageScopeHint" class="control-note">Settings currently apply to Page 1 only.</p>
+                        </div>
+
+                        <label class="control-card" for="fontSize">
+                            <span class="control-card-top">
+                                <span class="control-label">Text Scale</span>
+                                <span id="fontSizeValue" class="control-value">0</span>
+                            </span>
+                            <input type="range" id="fontSize" min="-1.5" max="1.5" step="0.1" value="0">
+                        </label>
+
+                        <label class="control-card" for="lineHeight">
+                            <span class="control-card-top">
+                                <span class="control-label">Line Spacing</span>
+                                <span id="lineHeightValue" class="control-value">1.2x</span>
+                            </span>
+                            <input type="range" id="lineHeight" min="1.05" max="1.5" step="0.05" value="1.2">
+                        </label>
+
+                        <label class="control-card control-card--toggle" for="centerFill">
+                            <span class="control-card-top">
+                                <span class="control-label">Center</span>
+                                <span id="centerFillValue" class="control-value">Off</span>
+                            </span>
+                            <span class="toggle-control">
+                                <input type="checkbox" id="centerFill">
+                                <span class="toggle-track" aria-hidden="true"></span>
+                            </span>
+                        </label>
+
+                        <label class="control-card control-card--toggle" for="editMode">
+                            <span class="control-card-top">
+                                <span class="control-label">Edit</span>
+                                <span id="editModeValue" class="control-value">Off</span>
+                            </span>
+                            <span class="toggle-control">
+                                <input type="checkbox" id="editMode">
+                                <span class="toggle-track" aria-hidden="true"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="previewTableContainer" class="text-preview">
+                    <div class="preview-page-meta">
+                        <span id="pageCountMeta">Total Pages: 0</span>
+                        <span id="pageTargetMeta">Editing: Page 1</span>
+                    </div>
+                    <div class="preview-carousel">
+                        <div class="preview-nav-group">
+                            <button id="previewPrev" class="preview-nav preview-nav--prev" type="button" aria-label="Previous page">Previous</button>
+                            <button id="previewNext" class="preview-nav preview-nav--next" type="button" aria-label="Next page">Next</button>
+                        </div>
+                        <div id="previewViewport" class="preview-viewport">
+                            <div id="previewContent" class="preview-pages"></div>
+                        </div>
+                        <div class="preview-download-actions">
+                            <button id="twoPageView" class="secondary-btn two-page-btn" type="button" aria-pressed="false">2-Page View</button>
+                            <button id="exportPDF" class="export-btn" type="button">Download PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+       
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
