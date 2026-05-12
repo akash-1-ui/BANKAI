@@ -9,11 +9,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Premium Access Guard Script -->
     <script>
-        // Check if user has completed payment
+        // Check if user has created or verified an account
         (function() {
-            const paymentStatus = localStorage.getItem('paymentStatus');
-            // Redirect to premium page if payment not completed
-            if (paymentStatus !== 'success') {
+            const userPin = localStorage.getItem('userPin');
+            const userPassword = localStorage.getItem('userPassword');
+
+            if (!userPin || !userPassword) {
                 window.location.href = 'premium.html';
             }
         })();
@@ -22,7 +23,10 @@
 <body>
     <div class="container">
         <header class="page-hero">
-            <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+            <div class="user-actions">
+                <span id="userPinBadge" class="user-pin-badge" aria-live="polite"></span>
+                <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+            </div>
             <h1>Micromize</h1>
         </header>
 

@@ -115,11 +115,32 @@ body {
     max-width: 980px;
 }
 
-.logout-btn {
+.user-actions {
     position: absolute;
     top: 24px;
     right: 28px;
     z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-pin-badge {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(12px);
+}
+
+.logout-btn {
     min-height: 42px;
     padding: 10px 18px;
     border-radius: 999px;
@@ -1065,12 +1086,17 @@ button:disabled {
         margin-top: 0;
         font-size: clamp(1.85rem, 8vw, 2.35rem);
         line-height: 1.05;
-        padding-right: 92px;
+        padding-right: 180px;
     }
 
-    .logout-btn {
+    .user-actions {
         top: 16px;
         right: 14px;
+        gap: 6px;
+    }
+
+    .user-pin-badge,
+    .logout-btn {
         min-height: 38px;
         padding: 8px 12px;
         font-size: 0.82rem;

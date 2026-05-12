@@ -151,6 +151,50 @@ function hasSavedAccountForPIN(pin) {
     return Boolean(storedPin && storedPassword && normalizePIN(storedPin) === normalizePIN(pin));
 }
 
+async function postPremiumAccount(endpoint, payload) {
+    if (window.location.port === '5500' || window.location.protocol === 'file:') {
+        throw new Error('Open this app through the Node server: http://localhost:3000/premium.html');
+    }
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Account request failed. Please try again.');
+    }
+
+    return data;
+}
+
+function saveAccountSession(pin, password) {
+    localStorage.setItem(STORAGE_KEYS.PIN, normalizePIN(pin));
+    localStorage.setItem(STORAGE_KEYS.PASSWORD, password);
+    localStorage.setItem(STORAGE_KEYS.PAYMENT_STATUS, 'success');
+}
+
+function showSuccessRedirect(message) {
+    const successModal = document.getElementById('successModal');
+    const successMsg = document.getElementById('successMessage');
+
+    if (successModal && successMsg) {
+        successMsg.textContent = message;
+        successModal.classList.add('show');
+
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1500);
+    } else {
+        window.location.href = 'index.html';
+    }
+}
+
 // ============================================
 // PIN Validation
 // ============================================
@@ -309,7 +353,7 @@ document.querySelectorAll('.toggle-password').forEach(button => {
 const premiumForm = document.getElementById('premiumForm');
 
 if (premiumForm) {
-    premiumForm.addEventListener('submit', (e) => {
+    premiumForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const pin = normalizePIN(pinInput?.value || '');
@@ -327,11 +371,6 @@ if (premiumForm) {
             return;
         }
 
-        if (hasSavedAccountForPIN(pin)) {
-            showAlert('Already Has Account', 'This PIN already has an account. Please use Already Activated to log in with your PIN and password.', true);
-            return;
-        }
-        
         if (!password) {
             showError('passwordError', 'Password is required');
             return;
@@ -351,25 +390,17 @@ if (premiumForm) {
             showError('confirmError', 'Passwords do not match');
             return;
         }
-        
-        // Save to localStorage
-        localStorage.setItem(STORAGE_KEYS.PIN, pin);
-        localStorage.setItem(STORAGE_KEYS.PASSWORD, password);
-        
-        // Show success and redirect
-        const successModal = document.getElementById('successModal');
-        const successMsg = document.getElementById('successMessage');
-        if (successModal && successMsg) {
-            successMsg.textContent = 'PIN verified successfully. Redirecting to payment...';
-            successModal.classList.add('show');
-            
-            // Redirect after 1.5 seconds
-            setTimeout(() => {
-                window.location.href = 'payment.html';
-            }, 1500);
-        } else {
-            // Fallback redirect
-            window.location.href = 'payment.html';
+
+        try {
+            await postPremiumAccount('/api/premium/register', { pin, password });
+            saveAccountSession(pin, password);
+            showSuccessRedirect('Account created successfully. Redirecting to dashboard...');
+        } catch (error) {
+            if (/already/i.test(error.message)) {
+                showAlert('Already Has Account', 'This PIN already has an account. Please use Already Activated to log in with your PIN and password.', true);
+            } else {
+                showAlert('Account Error', error.message, true);
+            }
         }
     });
 }
@@ -442,15 +473,11 @@ if (verifyModal) {
 }
 
 if (verifyForm) {
-    verifyForm.addEventListener('submit', (e) => {
+    verifyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const verifyPin = normalizePIN(document.getElementById('verifyPin')?.value || '');
         const verifyPassword = document.getElementById('verifyPassword')?.value || '';
-        
-        // Get stored credentials
-        const storedPin = localStorage.getItem(STORAGE_KEYS.PIN);
-        const storedPassword = localStorage.getItem(STORAGE_KEYS.PASSWORD);
         
         // Clear previous errors
         hideError('verifyPinError');
@@ -473,39 +500,27 @@ if (verifyForm) {
         }
         
         if (hasError) return;
-        
-        // Check credentials
-        if (verifyPin === storedPin && verifyPassword === storedPassword) {
-            // Credentials match - set payment status and redirect
-            localStorage.setItem(STORAGE_KEYS.PAYMENT_STATUS, 'success');
-            
-            // Show success message
+
+        try {
+            await postPremiumAccount('/api/premium/login', {
+                pin: verifyPin,
+                password: verifyPassword
+            });
+
+            saveAccountSession(verifyPin, verifyPassword);
+
             if (verifyModal) {
                 verifyModal.classList.remove('show');
             }
-            
-            const successModal = document.getElementById('successModal');
-            const successMsg = document.getElementById('successMessage');
-            if (successModal && successMsg) {
-                successMsg.textContent = 'Access verified. Redirecting to dashboard...';
-                successModal.classList.add('show');
-                
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1500);
+
+            showSuccessRedirect('Access verified. Redirecting to dashboard...');
+        } catch (error) {
+            if (/password/i.test(error.message)) {
+                showError('verifyPasswordError', error.message);
+            } else if (/account|pin/i.test(error.message)) {
+                showError('verifyPinError', error.message);
             } else {
-                window.location.href = 'index.html';
-            }
-        } else {
-            // Credentials don't match
-            if (verifyPin !== storedPin && storedPin) {
-                showError('verifyPinError', 'PIN does not match');
-            }
-            if (verifyPassword !== storedPassword && storedPassword) {
-                showError('verifyPasswordError', 'Password does not match');
-            }
-            if (!storedPin || !storedPassword) {
-                showAlert('No Account Found', 'No activated account found. Please create a new premium account.', true);
+                showAlert('Verification Failed', error.message, true);
             }
         }
     });
@@ -537,13 +552,23 @@ if (alertModal) {
 // Initialize on Page Load
 // ============================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if payment already completed
-    const paymentStatus = localStorage.getItem(STORAGE_KEYS.PAYMENT_STATUS);
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check if an account already has access while payments are paused.
+    const storedPin = localStorage.getItem(STORAGE_KEYS.PIN);
+    const storedPassword = localStorage.getItem(STORAGE_KEYS.PASSWORD);
     
-    if (paymentStatus === 'success') {
-        // Redirect to main app
-        window.location.href = 'index.html';
+    if (storedPin && storedPassword) {
+        try {
+            await postPremiumAccount('/api/premium/login', {
+                pin: storedPin,
+                password: storedPassword
+            });
+            window.location.href = 'index.html';
+        } catch (error) {
+            localStorage.removeItem(STORAGE_KEYS.PIN);
+            localStorage.removeItem(STORAGE_KEYS.PASSWORD);
+            localStorage.removeItem(STORAGE_KEYS.PAYMENT_STATUS);
+        }
     }
 });
 

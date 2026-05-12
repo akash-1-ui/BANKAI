@@ -6,6 +6,8 @@
     const SOURCE_TEXT_KEY = 'alignmentPreviewSourceV3';
     const SETTINGS_KEY = 'alignmentPreviewSettingsV8';
     const PAYMENT_STATUS_KEY = 'paymentStatus';
+    const USER_PIN_KEY = 'userPin';
+    const USER_PASSWORD_KEY = 'userPassword';
     const NUMBER_ONLY_PATTERN = /^>?\d+(?:\.\d+)?$/;
     const INLINE_NUMBER_PATTERN = /^(>?\d+(?:\.\d+)?)[\).\-\s]+(.+)$/;
     const DEFAULT_PAGE_SETTINGS = Object.freeze({
@@ -56,6 +58,7 @@
     const exportBtn = document.getElementById('exportPDF');
     const twoPageViewBtn = document.getElementById('twoPageView');
     const logoutBtn = document.getElementById('logoutBtn');
+    const userPinBadge = document.getElementById('userPinBadge');
 
 
     let previewData = [];
@@ -72,6 +75,43 @@
 
     function normalizeLine(line) {
         return String(line || '').replace(/\u00A0/g, ' ').replace(/\t/g, '    ').trim();
+    }
+
+    async function verifyStoredAccount() {
+        const userPin = localStorage.getItem(USER_PIN_KEY);
+        const userPassword = localStorage.getItem(USER_PASSWORD_KEY);
+
+        if (!userPin || !userPassword) {
+            window.location.href = 'premium.html';
+            return null;
+        }
+
+        try {
+            const response = await fetch('/api/premium/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    pin: userPin,
+                    password: userPassword
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Account verification failed.');
+            }
+
+            return data.pin || userPin;
+        } catch (error) {
+            localStorage.removeItem(USER_PIN_KEY);
+            localStorage.removeItem(USER_PASSWORD_KEY);
+            localStorage.removeItem(PAYMENT_STATUS_KEY);
+            window.location.href = 'premium.html';
+            return null;
+        }
     }
 
     function parseSourceText(text) {
@@ -558,10 +598,19 @@
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem(USER_PIN_KEY);
+            localStorage.removeItem(USER_PASSWORD_KEY);
             localStorage.removeItem(PAYMENT_STATUS_KEY);
             window.location.href = 'premium.html';
         });
     }
+
+    verifyStoredAccount().then(userPin => {
+        if (userPinBadge) {
+            userPinBadge.textContent = userPin ? `PIN: ${userPin}` : '';
+            userPinBadge.hidden = !userPin;
+        }
+    });
 
     fontSizeSlider.addEventListener('input', () => {
         const scaleOffset = parseFloat(fontSizeSlider.value);

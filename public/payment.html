@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Complete Payment - Premium Access</title>
     <link rel="stylesheet" href="premium-styles.css">
+    <script>
+        (function() {
+            const userPin = localStorage.getItem('userPin');
+            const userPassword = localStorage.getItem('userPassword');
+            window.location.replace(userPin && userPassword ? 'index.html' : 'premium.html');
+        })();
+    </script>
 </head>
 <body>
     <!-- Payment Page -->
