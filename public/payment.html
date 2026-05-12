@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Payment - Premium Access</title>
+    <link rel="stylesheet" href="premium-styles.css">
+</head>
+<body>
+    <!-- Payment Page -->
+    <div class="payment-container">
+        <!-- Background Elements -->
+        <div class="premium-bg-image"></div>
+        <div class="premium-bg-overlay"></div>
+        <div class="gradient-bg"></div>
+        <div class="floating-elements">
+            <div class="float-item item-1"></div>
+            <div class="float-item item-2"></div>
+            <div class="float-item item-3"></div>
+        </div>
+
+        <!-- Back Button -->
+        <button id="backBtn" class="btn btn-secondary payment-back-btn">&larr; Back to Verification</button>
+
+        <!-- Main Payment Content -->
+        <div class="payment-content">
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-step completed">
+                    <span class="progress-number">1</span>
+                    <span class="progress-label">Verification</span>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step active">
+                    <span class="progress-number">2</span>
+                    <span class="progress-label">Payment</span>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <span class="progress-number">3</span>
+                    <span class="progress-label">Complete</span>
+                </div>
+            </div>
+
+            <!-- Payment Card -->
+            <div class="glassmorphism-card payment-card">
+                <div class="card-header">
+                    <h1 class="payment-title">Complete Your Payment</h1>
+                    <p class="payment-subtitle">Secure payment for lifetime access</p>
+                </div>
+
+                <div class="payment-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Plan</span>
+                        <span class="summary-value">Lifetime Unlimited Access</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Duration</span>
+                        <span class="summary-value">Lifetime</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-item total">
+                        <span class="summary-label">Total Amount</span>
+                        <span class="summary-value amount">&#8377;50</span>
+                    </div>
+                </div>
+
+                <!-- Primary CTA -->
+                <button id="paymentBtn" class="btn btn-primary btn-large btn-payment">
+                    <span class="btn-content">
+                        <span class="btn-icon">&#128179;</span>
+                        <span class="btn-text">Pay &#8377;50 with Razorpay</span>
+                    </span>
+                    <span class="btn-loader hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner">
+                <div class="spinner-circle"></div>
+                <div class="spinner-circle"></div>
+                <div class="spinner-circle"></div>
+            </div>
+            <p class="loading-text">Processing your payment...</p>
+            <p class="loading-subtext">Please do not close this window</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal alert-modal">
+        <div class="modal-content alert-content success-modal">
+            <div class="success-animation">
+                <div class="checkmark-circle">
+                    <div class="checkmark"></div>
+                </div>
+            </div>
+            <h3>Payment Successful!</h3>
+            <p>Your premium access is now activated.</p>
+            <p class="redirecting-text">Redirecting to your dashboard...</p>
+            <div class="redirect-progress">
+                <div class="progress-bar" id="redirectProgress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal alert-modal">
+        <div class="modal-content alert-content error-modal">
+            <div class="error-icon">&times;</div>
+            <h3 id="errorTitle">Payment Failed</h3>
+            <p id="errorMessage"></p>
+            <button type="button" class="btn btn-primary" id="errorRetryBtn">Try Again</button>
+        </div>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="payment.js"></script>
+</body>
+</html>

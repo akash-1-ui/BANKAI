@@ -7,13 +7,23 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Premium Access Guard Script -->
+    <script>
+        // Check if user has completed payment
+        (function() {
+            const paymentStatus = localStorage.getItem('paymentStatus');
+            // Redirect to premium page if payment not completed
+            if (paymentStatus !== 'success') {
+                window.location.href = 'premium.html';
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
         <header class="page-hero">
-           
+            <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
             <h1>Micromize</h1>
-           
         </header>
 
         <section class="chat-section">

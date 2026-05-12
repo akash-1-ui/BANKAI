@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Access - Unlock Unlimited</title>
+    <link rel="stylesheet" href="premium-styles.css">
+</head>
+<body>
+    <div class="premium-container">
+        <div class="premium-bg-image"></div>
+        <div class="premium-bg-overlay"></div>
+        <div class="gradient-bg"></div>
+        <div class="floating-elements">
+            <div class="float-item item-1"></div>
+            <div class="float-item item-2"></div>
+            <div class="float-item item-3"></div>
+        </div>
+
+        <div class="premium-content">
+            <div class="premium-header">
+                <h1 class="premium-headline">Unlock Unlimited Access</h1>
+                <h2 class="premium-headline-sub">with One-Time Payment</h2>
+                <p class="premium-subtitle">Pay <strong>&#8377;50</strong> once and enjoy <strong>lifetime unlimited access</strong> with no monthly subscription.</p>
+            </div>
+
+            <div class="premium-card-flipper" id="premiumCardFlipper">
+                <div class="premium-card-inner">
+                    <div class="glassmorphism-card premium-card-face premium-card-front">
+                        <div class="card-header">
+                            <h3>Verify & Proceed</h3>
+                            <p>Enter your details to unlock premium access</p>
+                        </div>
+
+                        <form id="premiumForm" class="premium-form">
+                            <div class="form-group">
+                                <label for="pinNumber" class="form-label">
+                                    Student PIN Number
+                                    <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input
+                                        type="text"
+                                        id="pinNumber"
+                                        name="pin"
+                                        placeholder="Enter your 10-character PIN"
+                                        maxlength="10"
+                                        class="form-input"
+                                        required
+                                    >
+                                    <span class="input-icon">PIN</span>
+                                </div>
+                                <p class="form-hint">Format: 24xxxxx515</p>
+                                <div id="pinError" class="error-message"></div>
+                                <div id="pinSuccess" class="success-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="newPassword" class="form-label">
+                                    Create New Password
+                                    <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input
+                                        type="password"
+                                        id="newPassword"
+                                        name="password"
+                                        placeholder="Minimum 6 characters"
+                                        class="form-input"
+                                        required
+                                    >
+                                    <button type="button" class="toggle-password" data-target="newPassword">
+                                        <span class="toggle-icon">Show</span>
+                                    </button>
+                                </div>
+                                <div id="passwordError" class="error-message"></div>
+                                <div class="password-strength">
+                                    <div class="strength-bar" id="strengthBar"></div>
+                                    <span class="strength-text" id="strengthText">-</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirmPassword" class="form-label">
+                                    Confirm Password
+                                    <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input
+                                        type="password"
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        placeholder="Re-enter your password"
+                                        class="form-input"
+                                        required
+                                    >
+                                    <button type="button" class="toggle-password" data-target="confirmPassword">
+                                        <span class="toggle-icon">Show</span>
+                                    </button>
+                                </div>
+                                <div id="confirmError" class="error-message"></div>
+                                <div id="confirmSuccess" class="success-message"></div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" id="proceedBtn" class="btn btn-primary btn-large">
+                                    <span class="btn-text">Proceed to Payment</span>
+                                    <span class="btn-arrow">-&gt;</span>
+                                </button>
+                            </div>
+
+                            <div class="already-activated">
+                                <p>Already Activated?</p>
+                                <button type="button" id="verifyAccessBtn" class="link-btn">Enter PIN & Password to Verify</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="glassmorphism-card premium-card-face premium-card-back">
+                        <div class="card-header">
+                            <h3>Verify Your Access</h3>
+                            <p>Log in with your activated PIN and password</p>
+                        </div>
+
+                        <form id="verifyForm" class="premium-form">
+                            <div class="form-group">
+                                <label for="verifyPin" class="form-label">
+                                    Student PIN Number
+                                    <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input
+                                        type="text"
+                                        id="verifyPin"
+                                        placeholder="Enter your PIN"
+                                        maxlength="10"
+                                        class="form-input"
+                                        required
+                                    >
+                                    <span class="input-icon">PIN</span>
+                                </div>
+                                <div id="verifyPinError" class="error-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="verifyPassword" class="form-label">
+                                    Password
+                                    <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input
+                                        type="password"
+                                        id="verifyPassword"
+                                        placeholder="Enter your password"
+                                        class="form-input"
+                                        required
+                                    >
+                                    <button type="button" class="toggle-password" data-target="verifyPassword">
+                                        <span class="toggle-icon">Show</span>
+                                    </button>
+                                </div>
+                                <div id="verifyPasswordError" class="error-message"></div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-large">Verify & Access</button>
+                                <button type="button" id="returnSignupBtn" class="btn btn-secondary btn-large">Create New Account</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alertModal" class="modal alert-modal">
+        <div class="modal-content alert-content">
+            <div class="alert-icon">!</div>
+            <h3 id="alertTitle">Alert</h3>
+            <p id="alertMessage"></p>
+            <button type="button" class="btn btn-primary" id="alertCloseBtn">Okay</button>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal alert-modal">
+        <div class="modal-content alert-content success-modal">
+            <div class="alert-icon success-icon">OK</div>
+            <h3>Success!</h3>
+            <p id="successMessage">Redirecting to payment...</p>
+        </div>
+    </div>
+
+    <script src="premium.js"></script>
+</body>
+</html>

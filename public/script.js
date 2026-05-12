@@ -5,6 +5,7 @@
     const LEGACY_STORAGE_KEY = 'alignmentPreviewDataV2';
     const SOURCE_TEXT_KEY = 'alignmentPreviewSourceV3';
     const SETTINGS_KEY = 'alignmentPreviewSettingsV8';
+    const PAYMENT_STATUS_KEY = 'paymentStatus';
     const NUMBER_ONLY_PATTERN = /^>?\d+(?:\.\d+)?$/;
     const INLINE_NUMBER_PATTERN = /^(>?\d+(?:\.\d+)?)[\).\-\s]+(.+)$/;
     const DEFAULT_PAGE_SETTINGS = Object.freeze({
@@ -54,6 +55,7 @@
     const pageTargetMeta = document.getElementById('pageTargetMeta');
     const exportBtn = document.getElementById('exportPDF');
     const twoPageViewBtn = document.getElementById('twoPageView');
+    const logoutBtn = document.getElementById('logoutBtn');
 
 
     let previewData = [];
@@ -553,6 +555,13 @@
         chatInput.value = '';
         renderPreview();
     });
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem(PAYMENT_STATUS_KEY);
+            window.location.href = 'premium.html';
+        });
+    }
 
     fontSizeSlider.addEventListener('input', () => {
         const scaleOffset = parseFloat(fontSizeSlider.value);
