@@ -90,6 +90,26 @@ function showAlert(title, message, isError = true) {
     modal.classList.add('show');
 }
 
+function friendlyPremiumMessage(message, fallback) {
+    const text = String(message || '').trim();
+
+    if (!text) return fallback;
+    if (/file:\/\//i.test(text)) {
+        return 'Please open this app from the local server, not directly as a file. Start the server with npm start, then visit http://localhost:3000/premium.html.';
+    }
+    if (/already/i.test(text)) {
+        return 'This PIN already has an account. Use Login with your PIN and password to continue.';
+    }
+    if (/password/i.test(text)) {
+        return 'The password does not match this PIN. Please check it and try again.';
+    }
+    if (/account|pin/i.test(text)) {
+        return 'We could not find an active account for this PIN. Please check the PIN or create a new account.';
+    }
+
+    return text;
+}
+
 /**
  * Hide alert modal
  */
@@ -152,11 +172,22 @@ function hasSavedAccountForPIN(pin) {
 }
 
 async function postPremiumAccount(endpoint, payload) {
-    if (window.location.port === '5500' || window.location.protocol === 'file:') {
-        throw new Error('Open this app through the Node server: http://localhost:3000/premium.html');
+    // Only reject if using file:// protocol
+    if (window.location.protocol === 'file:') {
+        throw new Error('Please open this app from the local server, not directly as a file. Start the server with npm start, then visit http://localhost:3000/premium.html.');
     }
 
-    const response = await fetch(endpoint, {
+    // Allow any local server (localhost, 127.0.0.1, Live Server, etc.)
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '::1') {
+        console.warn('⚠️  Non-local hostname detected:', hostname);
+    }
+
+    // Always use port 3000 for API calls (Node.js server)
+    // This ensures Live Server (5500) requests go to the backend on 3000
+    const apiUrl = `http://localhost:3000${endpoint}`;
+
+    const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -367,7 +398,7 @@ if (premiumForm) {
         }
         
         if (!isValidPIN(pin)) {
-            showAlert('Access Denied', 'Access denied. Your PIN number is not authorized to use this platform.', true);
+            showAlert('PIN Not Eligible', 'This PIN is not in the eligible student range for premium access. Please check the PIN and try again.', true);
             return;
         }
 
@@ -394,12 +425,13 @@ if (premiumForm) {
         try {
             await postPremiumAccount('/api/premium/register', { pin, password });
             saveAccountSession(pin, password);
-            showSuccessRedirect('Account created successfully. Redirecting to dashboard...');
+            showSuccessRedirect('Your account is ready. Taking you to Micromize...');
         } catch (error) {
+            const message = friendlyPremiumMessage(error.message, 'We could not create your account right now. Please try again.');
             if (/already/i.test(error.message)) {
-                showAlert('Already Has Account', 'This PIN already has an account. Please use Already Activated to log in with your PIN and password.', true);
+                showAlert('Account Already Exists', message, true);
             } else {
-                showAlert('Account Error', error.message, true);
+                showAlert('Account Setup Failed', message, true);
             }
         }
     });
@@ -513,14 +545,15 @@ if (verifyForm) {
                 verifyModal.classList.remove('show');
             }
 
-            showSuccessRedirect('Access verified. Redirecting to dashboard...');
+            showSuccessRedirect('Login successful. Taking you to Micromize...');
         } catch (error) {
+            const message = friendlyPremiumMessage(error.message, 'We could not log you in right now. Please try again.');
             if (/password/i.test(error.message)) {
-                showError('verifyPasswordError', error.message);
+                showError('verifyPasswordError', message);
             } else if (/account|pin/i.test(error.message)) {
-                showError('verifyPinError', error.message);
+                showError('verifyPinError', message);
             } else {
-                showAlert('Verification Failed', error.message, true);
+                showAlert('Login Failed', message, true);
             }
         }
     });

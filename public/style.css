@@ -79,9 +79,10 @@ body {
 
 .page-hero {
     position: relative;
+    z-index: 5;
     isolation: isolate;
     padding: 34px 36px 36px;
-    overflow: hidden;
+    overflow: visible;
     background:
         linear-gradient(115deg, color-mix(in srgb, var(--hero-warm) 34%, transparent) 0%, rgba(139, 188, 255, 0) 34%),
         linear-gradient(128deg, var(--hero-start) 0%, var(--hero-mid) 50%, var(--hero-end) 100%);
@@ -113,23 +114,88 @@ body {
     line-height: 1.05;
     margin-top: 10px;
     max-width: 980px;
+    padding-right: 76px;
 }
 
 .user-actions {
     position: absolute;
     top: 24px;
     right: 28px;
-    z-index: 1;
-    display: inline-flex;
+    z-index: 20;
+    display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 10px;
+}
+
+.account-menu-btn {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 14px 30px rgba(8, 42, 95, 0.18);
+}
+
+.account-menu-btn span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #fff;
+    display: block;
+}
+
+.account-menu-btn:hover,
+.account-menu-btn[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.account-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(220px, calc(100vw - 40px));
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(216, 230, 251, 0.95);
+    box-shadow: 0 24px 60px rgba(18, 41, 76, 0.24);
+    color: var(--text);
+    backdrop-filter: blur(18px);
+    transform-origin: top right;
+    animation: menuIn 0.16s ease both;
+}
+
+.account-menu[hidden] {
+    display: none;
+}
+
+@keyframes menuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .user-pin-badge {
     min-height: 42px;
     display: inline-flex;
     align-items: center;
-    padding: 9px 16px;
+    padding: 9px 14px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -138,21 +204,210 @@ body {
     font-weight: 800;
     letter-spacing: 0.02em;
     backdrop-filter: blur(12px);
+    word-break: break-word;
 }
 
-.logout-btn {
-    min-height: 42px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.16);
-    border: 1px solid rgba(255, 255, 255, 0.32);
-    color: #fff;
+.account-menu .logout-btn,
+.account-menu .disable-account-btn {
+    width: 100%;
+    min-height: 46px;
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     box-shadow: none;
-    backdrop-filter: blur(12px);
 }
 
-.logout-btn:hover {
-    background: rgba(255, 255, 255, 0.24);
+.account-menu .logout-btn {
+    color: white;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+    border: 1px solid transparent;
+}
+
+.account-menu .logout-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+}
+
+.account-menu .disable-account-btn {
+    background: #fff;
+    border: 1px solid rgba(217, 83, 79, 0.28);
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.account-menu .disable-account-btn:hover {
+    background: rgba(217, 83, 79, 0.08);
+    border-color: rgba(217, 83, 79, 0.42);
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.delete-modal-content {
+    position: relative;
+    z-index: 1001;
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(40px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text);
+}
+
+.modal-close-btn {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: var(--text);
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.warning-text {
+    color: var(--danger);
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.delete-warnings {
+    list-style: disc;
+    margin-left: 20px;
+    margin-bottom: 20px;
+    color: var(--muted);
+}
+
+.delete-warnings li {
+    margin-bottom: 8px;
+}
+
+.delete-password-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-top: 12px;
+}
+
+.delete-password-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.error-message {
+    color: var(--danger);
+    font-size: 0.9rem;
+    margin-top: 8px;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary {
+    background: var(--border);
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: var(--border-strong);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c9302c;
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .hero-subtitle {
@@ -1086,17 +1341,27 @@ button:disabled {
         margin-top: 0;
         font-size: clamp(1.85rem, 8vw, 2.35rem);
         line-height: 1.05;
-        padding-right: 180px;
+        padding-right: 0;
     }
 
     .user-actions {
         top: 16px;
         right: 14px;
-        gap: 6px;
     }
 
-    .user-pin-badge,
-    .logout-btn {
+    .account-menu-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+
+    .account-menu {
+        width: min(220px, calc(100vw - 28px));
+        right: 0;
+        border-radius: 18px;
+    }
+
+    .user-pin-badge {
         min-height: 38px;
         padding: 8px 12px;
         font-size: 0.82rem;

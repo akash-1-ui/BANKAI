@@ -57,6 +57,8 @@
     const pageTargetMeta = document.getElementById('pageTargetMeta');
     const exportBtn = document.getElementById('exportPDF');
     const twoPageViewBtn = document.getElementById('twoPageView');
+    const accountMenuBtn = document.getElementById('accountMenuBtn');
+    const accountMenu = document.getElementById('accountMenu');
     const logoutBtn = document.getElementById('logoutBtn');
     const userPinBadge = document.getElementById('userPinBadge');
 
@@ -87,7 +89,7 @@
         }
 
         try {
-            const response = await fetch('/api/premium/login', {
+            const response = await fetch('http://localhost:3000/api/premium/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -596,12 +598,158 @@
         renderPreview();
     });
 
+    function closeAccountMenu() {
+        if (!accountMenu || !accountMenuBtn) {
+            return;
+        }
+
+        accountMenu.hidden = true;
+        accountMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleAccountMenu() {
+        if (!accountMenu || !accountMenuBtn) {
+            return;
+        }
+
+        const willOpen = accountMenu.hidden;
+        accountMenu.hidden = !willOpen;
+        accountMenuBtn.setAttribute('aria-expanded', String(willOpen));
+    }
+
+    if (accountMenuBtn && accountMenu) {
+        accountMenuBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            toggleAccountMenu();
+        });
+
+        accountMenu.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+
+        document.addEventListener('click', closeAccountMenu);
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeAccountMenu();
+            }
+        });
+    }
+
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem(USER_PIN_KEY);
             localStorage.removeItem(USER_PASSWORD_KEY);
             localStorage.removeItem(PAYMENT_STATUS_KEY);
             window.location.href = 'premium.html';
+        });
+    }
+
+    // Delete Account Handler
+    const disableAccountBtn = document.getElementById('disableAccountBtn');
+    const deleteAccountModal = document.getElementById('deleteAccountModal');
+    const deleteAccountCancelBtn = document.getElementById('deleteAccountCancelBtn');
+    const deleteAccountConfirmBtn = document.getElementById('deleteAccountConfirmBtn');
+    const modalCloseBtn = deleteAccountModal?.querySelector('.modal-close-btn');
+    const deletePasswordConfirm = document.getElementById('deletePasswordConfirm');
+    const deleteErrorMsg = document.getElementById('deleteErrorMsg');
+
+    function openDeleteModal() {
+        if (deleteAccountModal) {
+            deleteAccountModal.style.display = 'flex';
+            deleteAccountModal.classList.add('show');
+            deletePasswordConfirm.value = '';
+            deleteErrorMsg.classList.remove('show');
+            deleteErrorMsg.textContent = '';
+            deletePasswordConfirm.focus();
+        }
+    }
+
+    function closeDeleteModal() {
+        if (deleteAccountModal) {
+            deleteAccountModal.classList.remove('show');
+            setTimeout(() => {
+                deleteAccountModal.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    if (disableAccountBtn) {
+        disableAccountBtn.addEventListener('click', () => {
+            closeAccountMenu();
+            openDeleteModal();
+        });
+    }
+
+    if (deleteAccountCancelBtn) {
+        deleteAccountCancelBtn.addEventListener('click', closeDeleteModal);
+    }
+
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closeDeleteModal);
+    }
+
+    if (deleteAccountModal) {
+        deleteAccountModal.addEventListener('click', (e) => {
+            if (e.target === deleteAccountModal) {
+                closeDeleteModal();
+            }
+        });
+    }
+
+    if (deletePasswordConfirm) {
+        deletePasswordConfirm.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                deleteAccountConfirmBtn?.click();
+            }
+        });
+    }
+
+    if (deleteAccountConfirmBtn) {
+        deleteAccountConfirmBtn.addEventListener('click', async () => {
+            const password = deletePasswordConfirm.value.trim();
+            const pin = localStorage.getItem(USER_PIN_KEY);
+
+            if (!password) {
+                deleteErrorMsg.textContent = 'Please enter your password';
+                deleteErrorMsg.classList.add('show');
+                return;
+            }
+
+            deleteAccountConfirmBtn.disabled = true;
+            deleteAccountConfirmBtn.textContent = 'Deleting...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/premium/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pin, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to delete account');
+                }
+
+                // Clear local storage
+                localStorage.removeItem(USER_PIN_KEY);
+                localStorage.removeItem(USER_PASSWORD_KEY);
+                localStorage.removeItem(PAYMENT_STATUS_KEY);
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(SOURCE_TEXT_KEY);
+                localStorage.removeItem(SETTINGS_KEY);
+
+                // Show success message
+                alert('Your account has been successfully deleted. You will be redirected to the premium page.');
+                window.location.href = 'premium.html';
+            } catch (error) {
+                deleteErrorMsg.textContent = error.message || 'Unable to delete account. Please try again.';
+                deleteErrorMsg.classList.add('show');
+                deleteAccountConfirmBtn.disabled = false;
+                deleteAccountConfirmBtn.textContent = 'Delete Account';
+            }
         });
     }
 

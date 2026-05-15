@@ -1,5 +1,4 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const { Pool } = require('pg');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -7,65 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-loadEnvFiles([
-  path.join(__dirname, '.env'),
-  path.join(__dirname, 'public', '.env')
-]);
-
-const app = express();
-const port = Number(process.env.PORT) || 3000;
-const DATABASE_URL = process.env.DATABASE_URL;
-const PIN_RANGES = [
-  { start: '23XZ1A0501', end: '23XZ1A0526' },
-  { start: '24XZ5A0501', end: '24XZ5A0517' }
-];
-const pgPool = DATABASE_URL
-  ? new Pool({
-      connectionString: DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
-    })
-  : null;
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('public', { dotfiles: 'deny' }));
-
-// Database setup
-const dbPath = path.join(__dirname, 'database.db');
-const db = new sqlite3.Database(dbPath);
-
-// Initialize table
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS data (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    col1 TEXT,
-    col2 TEXT,
-    col3 TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-});
-
-// API Routes
-
-async function initializePostgres() {
-  if (!pgPool) {
-    console.warn('DATABASE_URL is not set. Premium account database APIs are disabled.');
-    return;
-  }
-
-  await pgPool.query(`
-    CREATE TABLE IF NOT EXISTS premium_accounts (
-      pin TEXT PRIMARY KEY,
-      password_hash TEXT NOT NULL,
-      password_salt TEXT NOT NULL,
-      payment_status TEXT NOT NULL DEFAULT 'paused',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-}
-
+// Define loadEnvFiles before using it
 function loadEnvFiles(envPaths) {
   for (const envPath of envPaths) {
     if (!fs.existsSync(envPath)) {
@@ -106,6 +47,91 @@ function loadEnvFiles(envPaths) {
   }
 }
 
+loadEnvFiles([
+  path.join(__dirname, '.env'),
+  path.join(__dirname, 'public', '.env')
+]);
+
+const app = express();
+const port = Number(process.env.PORT) || 3000;
+const DATABASE_URL = process.env.DATABASE_URL;
+const PIN_RANGES = [
+  { start: '23XZ1A0501', end: '23XZ1A0526' },
+  { start: '24XZ5A0501', end: '24XZ5A0517' }
+];
+// In-memory fallback storage
+const inMemoryStore = {
+  premiumAccounts: new Map(),
+  data: []
+};
+
+let pgPool = null;
+let databaseAvailable = false;
+
+// Initialize database connection
+if (DATABASE_URL) {
+  pgPool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+}
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('public', { dotfiles: 'deny' }));
+
+// API Routes
+
+let databaseReadyPromise;
+
+async function initializePostgres() {
+  if (!pgPool) {
+    console.warn('DATABASE_URL is not set. Using in-memory storage.');
+    databaseAvailable = false;
+    return;
+  }
+
+  try {
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS data (
+        id BIGSERIAL PRIMARY KEY,
+        col1 TEXT,
+        col2 TEXT,
+        col3 TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS premium_accounts (
+        pin TEXT PRIMARY KEY,
+        password_hash TEXT NOT NULL,
+        password_salt TEXT NOT NULL,
+        payment_status TEXT NOT NULL DEFAULT 'paused',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    
+    databaseAvailable = true;
+    console.log('✓ Database connected successfully');
+  } catch (error) {
+    console.error('⚠️  Database connection failed:', error.message);
+    console.log('Falling back to in-memory storage...');
+    databaseAvailable = false;
+    pgPool = null;
+  }
+}
+
+function ensureDatabaseReady() {
+  if (!databaseReadyPromise) {
+    databaseReadyPromise = initializePostgres();
+  }
+
+  return databaseReadyPromise;
+}
+
 
 
 function normalizePIN(pin) {
@@ -120,14 +146,21 @@ function isValidPIN(pin) {
   return PIN_RANGES.some(range => normalized >= range.start && normalized <= range.end);
 }
 
-function requirePremiumDatabase(res) {
-  if (!pgPool) {
-    res.status(503).json({ error: 'Premium account database is not configured.' });
-    return false;
-  }
-
+function requireDatabase(res) {
+  // Always allow requests - use database if available, otherwise use in-memory storage
   return true;
 }
+
+app.use('/api', async (req, res, next) => {
+  try {
+    await ensureDatabaseReady();
+    next();
+  } catch (error) {
+    // Don't block requests even if database fails
+    console.error('Database error:', error.message);
+    next();
+  }
+});
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return new Promise((resolve, reject) => {
@@ -154,7 +187,9 @@ async function verifyPassword(password, salt, expectedHash) {
 }
 
 app.post('/api/premium/register', async (req, res) => {
-  if (!requirePremiumDatabase(res)) return;
+  if (!requireDatabase(res)) return;
+
+  await ensureDatabaseReady();
 
   const pin = normalizePIN(req.body?.pin);
   const password = String(req.body?.password || '');
@@ -168,29 +203,51 @@ app.post('/api/premium/register', async (req, res) => {
   }
 
   try {
-    const existing = await pgPool.query('SELECT pin FROM premium_accounts WHERE pin = $1', [pin]);
+    // Check if PIN already exists
+    let existing = null;
+    
+    if (databaseAvailable && pgPool) {
+      const result = await pgPool.query('SELECT pin FROM premium_accounts WHERE pin = $1', [pin]);
+      existing = result.rowCount > 0;
+    } else {
+      existing = inMemoryStore.premiumAccounts.has(pin);
+    }
 
-    if (existing.rowCount > 0) {
+    if (existing) {
       return res.status(409).json({ error: 'This PIN already has an account.' });
     }
 
     const { hash, salt } = await hashPassword(password);
 
-    await pgPool.query(
-      `INSERT INTO premium_accounts (pin, password_hash, password_salt, payment_status)
-       VALUES ($1, $2, $3, $4)`,
-      [pin, hash, salt, 'paused']
-    );
+    // Save to database or in-memory
+    if (databaseAvailable && pgPool) {
+      await pgPool.query(
+        `INSERT INTO premium_accounts (pin, password_hash, password_salt, payment_status)
+         VALUES ($1, $2, $3, $4)`,
+        [pin, hash, salt, 'paused']
+      );
+    } else {
+      inMemoryStore.premiumAccounts.set(pin, {
+        pin,
+        password_hash: hash,
+        password_salt: salt,
+        payment_status: 'paused',
+        created_at: new Date()
+      });
+    }
 
+    console.log(`✓ Premium account created for PIN: ${pin} (using ${databaseAvailable ? 'database' : 'in-memory'})`);
     res.json({ success: true, pin });
   } catch (error) {
-    console.error('Premium register failed:', error);
+    console.error('Premium register failed:', error.message);
     res.status(500).json({ error: 'Unable to create account. Please try again.' });
   }
 });
 
 app.post('/api/premium/login', async (req, res) => {
-  if (!requirePremiumDatabase(res)) return;
+  if (!requireDatabase(res)) return;
+
+  await ensureDatabaseReady();
 
   const pin = normalizePIN(req.body?.pin);
   const password = String(req.body?.password || '');
@@ -200,98 +257,174 @@ app.post('/api/premium/login', async (req, res) => {
   }
 
   try {
-    const result = await pgPool.query(
-      'SELECT pin, password_hash, password_salt, payment_status FROM premium_accounts WHERE pin = $1',
-      [pin]
-    );
+    let account = null;
+    
+    if (databaseAvailable && pgPool) {
+      const result = await pgPool.query(
+        'SELECT pin, password_hash, password_salt, payment_status FROM premium_accounts WHERE pin = $1',
+        [pin]
+      );
+      account = result.rows[0] || null;
+    } else {
+      account = inMemoryStore.premiumAccounts.get(pin) || null;
+    }
 
-    if (result.rowCount === 0) {
+    if (!account) {
       return res.status(401).json({ error: 'No account found for this PIN.' });
     }
 
-    const account = result.rows[0];
     const passwordMatches = await verifyPassword(password, account.password_salt, account.password_hash);
 
     if (!passwordMatches) {
       return res.status(401).json({ error: 'Password does not match.' });
     }
 
+    console.log(`✓ Premium login successful for PIN: ${pin}`);
     res.json({
       success: true,
       pin: account.pin,
       paymentStatus: account.payment_status
     });
   } catch (error) {
-    console.error('Premium login failed:', error);
+    console.error('Premium login failed:', error.message);
     res.status(500).json({ error: 'Unable to verify account. Please try again.' });
   }
 });
 
-// GET all data
-app.get('/api/data', (req, res) => {
-  db.all('SELECT * FROM data ORDER BY id DESC', (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+// DELETE premium account
+app.post('/api/premium/delete', async (req, res) => {
+  if (!requireDatabase(res)) return;
+
+  await ensureDatabaseReady();
+
+  const pin = normalizePIN(req.body?.pin);
+  const password = String(req.body?.password || '');
+
+  if (!pin || !password) {
+    return res.status(400).json({ error: 'PIN and password are required.' });
+  }
+
+  try {
+    let account = null;
+    
+    if (databaseAvailable && pgPool) {
+      const result = await pgPool.query(
+        'SELECT pin, password_hash, password_salt FROM premium_accounts WHERE pin = $1',
+        [pin]
+      );
+      account = result.rows[0] || null;
+    } else {
+      account = inMemoryStore.premiumAccounts.get(pin) || null;
     }
-    res.json(rows);
-  });
+
+    if (!account) {
+      return res.status(401).json({ error: 'Account not found.' });
+    }
+
+    // Verify password before deletion
+    const passwordMatches = await verifyPassword(password, account.password_salt, account.password_hash);
+    if (!passwordMatches) {
+      return res.status(401).json({ error: 'Password is incorrect. Cannot delete account.' });
+    }
+
+    // Delete the account
+    if (databaseAvailable && pgPool) {
+      await pgPool.query('DELETE FROM premium_accounts WHERE pin = $1', [pin]);
+    } else {
+      inMemoryStore.premiumAccounts.delete(pin);
+    }
+
+    console.log(`🗑️  Premium account deleted for PIN: ${pin}`);
+    res.json({ success: true, message: 'Account successfully deleted.' });
+  } catch (error) {
+    console.error('Account deletion failed:', error.message);
+    res.status(500).json({ error: 'Unable to delete account. Please try again.' });
+  }
+});
+
+// GET all data
+app.get('/api/data', async (req, res) => {
+  if (!requireDatabase(res)) return;
+
+  await ensureDatabaseReady();
+
+  try {
+    const result = await pgPool.query('SELECT * FROM data ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Data fetch failed:', error);
+    res.status(500).json({ error: 'Unable to fetch data. Please try again.' });
+  }
 });
 
 // POST new data (array of {col1, col2, col3})
-app.post('/api/data', (req, res) => {
+app.post('/api/data', async (req, res) => {
+  if (!requireDatabase(res)) return;
+
+  await ensureDatabaseReady();
+
   const { data } = req.body; // expect array of objects
   
   if (!Array.isArray(data) || data.length === 0) {
     return res.status(400).json({ error: 'Data must be non-empty array' });
   }
 
-  const stmt = db.prepare('INSERT INTO data (col1, col2, col3) VALUES (?, ?, ?)');
-  
-  db.serialize(() => {
-    db.run('BEGIN TRANSACTION');
-    
-    let inserted = 0;
-    data.forEach(row => {
-      stmt.run(row.col1 || '', row.col2 || '', row.col3 || '');
-      inserted++;
-    });
-    
-    stmt.finalize(() => {
-      db.run('COMMIT', (err) => {
-        if (err) {
-          db.run('ROLLBACK');
-          res.status(500).json({ error: err.message });
-        } else {
-          res.json({ success: true, inserted: inserted });
-        }
-      });
-    });
-  });
+  const client = await pgPool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    for (const row of data) {
+      await client.query(
+        'INSERT INTO data (col1, col2, col3) VALUES ($1, $2, $3)',
+        [row.col1 || '', row.col2 || '', row.col3 || '']
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, inserted: data.length });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Data insert failed:', error);
+    res.status(500).json({ error: 'Unable to save data. Please try again.' });
+  } finally {
+    client.release();
+  }
 });
 
 
 
 // DELETE all data (for testing)
-app.delete('/api/data', (req, res) => {
-  db.run('DELETE FROM data', (err) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json({ success: true });
-    }
-  });
+app.delete('/api/data', async (req, res) => {
+  if (!requireDatabase(res)) return;
+
+  await ensureDatabaseReady();
+
+  try {
+    await pgPool.query('DELETE FROM data');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Data delete failed:', error);
+    res.status(500).json({ error: 'Unable to delete data. Please try again.' });
+  }
 });
 
-initializePostgres()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`Server running at http://localhost:${port}`);
-      console.log(`SQLite database: ${dbPath}`);
-      console.log(`Premium database: ${pgPool ? 'PostgreSQL / Neon' : 'disabled'}`);
+if (require.main === module) {
+  ensureDatabaseReady()
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`\n🚀 Server running at http://localhost:${port}`);
+        console.log(`📊 Storage: ${databaseAvailable ? '✓ PostgreSQL/Neon' : '💾 In-Memory (local development)'}\n`);
+      });
+    })
+    .catch(error => {
+      // Don't exit on error, just log it
+      console.error('⚠️  Error during startup:', error.message);
+      app.listen(port, () => {
+        console.log(`\n🚀 Server running at http://localhost:${port}`);
+        console.log(`📊 Storage: 💾 In-Memory (fallback mode)\n`);
+      });
     });
-  })
-  .catch(error => {
-    console.error('Failed to initialize premium database:', error);
-    process.exit(1);
-  });
+}
+
+module.exports = app;

@@ -25,7 +25,15 @@
         <header class="page-hero">
             <div class="user-actions">
                 <span id="userPinBadge" class="user-pin-badge" aria-live="polite"></span>
-                <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+                <button id="accountMenuBtn" class="account-menu-btn" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="accountMenu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div id="accountMenu" class="account-menu" hidden>
+                    <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+                    <button id="disableAccountBtn" class="disable-account-btn" type="button" title="Permanently delete your account">Delete Account</button>
+                </div>
             </div>
             <h1>Micromize</h1>
         </header>
@@ -150,6 +158,38 @@
         </section>
 
        
+    </div>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div id="deleteAccountModal" class="modal delete-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content delete-modal-content">
+            <div class="modal-header">
+                <h2>Delete Account</h2>
+                <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="warning-text">⚠️ <strong>This action cannot be undone!</strong></p>
+                <p>Deleting your account will:</p>
+                <ul class="delete-warnings">
+                    <li>Permanently remove your account from our database</li>
+                    <li>Remove all your saved data and settings</li>
+                    <li>Disable access to premium features</li>
+                </ul>
+                <p>To confirm deletion, please enter your password:</p>
+                <input 
+                    type="password" 
+                    id="deletePasswordConfirm" 
+                    placeholder="Enter your password" 
+                    class="form-input delete-password-input"
+                >
+                <div id="deleteErrorMsg" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="deleteAccountCancelBtn" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="deleteAccountConfirmBtn" class="btn btn-danger">Delete Account</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
