@@ -110,6 +110,18 @@ function friendlyPremiumMessage(message, fallback) {
     return text;
 }
 
+function getPremiumApiUrl(endpoint) {
+    if (window.location.protocol === 'file:') {
+        throw new Error('Please open this app from the local server, not directly as a file. Start the server with npm start, then visit http://localhost:3000/premium.html.');
+    }
+
+    const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+    const isSeparateLocalFrontend = isLocalHost && window.location.port && window.location.port !== '3000';
+    const baseUrl = isSeparateLocalFrontend ? 'http://localhost:3000' : window.location.origin;
+
+    return `${baseUrl}${endpoint}`;
+}
+
 /**
  * Hide alert modal
  */
@@ -183,9 +195,7 @@ async function postPremiumAccount(endpoint, payload) {
         console.warn('⚠️  Non-local hostname detected:', hostname);
     }
 
-    // Always use port 3000 for API calls (Node.js server)
-    // This ensures Live Server (5500) requests go to the backend on 3000
-    const apiUrl = `http://localhost:3000${endpoint}`;
+    const apiUrl = getPremiumApiUrl(endpoint);
 
     const response = await fetch(apiUrl, {
         method: 'POST',

@@ -79,6 +79,14 @@
         return String(line || '').replace(/\u00A0/g, ' ').replace(/\t/g, '    ').trim();
     }
 
+    function getPremiumApiUrl(endpoint) {
+        const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+        const isSeparateLocalFrontend = isLocalHost && window.location.port && window.location.port !== '3000';
+        const baseUrl = isSeparateLocalFrontend ? 'http://localhost:3000' : window.location.origin;
+
+        return `${baseUrl}${endpoint}`;
+    }
+
     async function verifyStoredAccount() {
         const userPin = localStorage.getItem(USER_PIN_KEY);
         const userPassword = localStorage.getItem(USER_PASSWORD_KEY);
@@ -89,7 +97,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:3000/api/premium/login', {
+            const response = await fetch(getPremiumApiUrl('/api/premium/login'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -719,7 +727,7 @@
             deleteAccountConfirmBtn.textContent = 'Deleting...';
 
             try {
-                const response = await fetch('http://localhost:3000/api/premium/delete', {
+                const response = await fetch(getPremiumApiUrl('/api/premium/delete'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
